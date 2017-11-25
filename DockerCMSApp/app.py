@@ -2,9 +2,6 @@ from flask import Flask, Response, render_template, request
 import json
 from subprocess import Popen, PIPE
 import os
-import sys
-from tempfile import mkdtemp
-from werkzeug import secure_filename
 
 app = Flask(__name__)
 
@@ -38,7 +35,6 @@ def docker(*args):
     cmd = ['docker']
     for sub in args:
         cmd.append(sub)
-    print(cmd)
     process = Popen(cmd, stdout=PIPE, stderr=PIPE)
     stdout, stderr = process.communicate()
     if stderr.startswith(b'Error'):
@@ -118,6 +114,7 @@ def docker_images_to_array(output):
         all.append(each)
     return all
 
+
 @app.route('/containers', methods=['GET'])
 # define an endpoint to list all containers
 def conainers_index():
@@ -174,6 +171,130 @@ def nodes_index():
     output = docker('node','ls')
     resp = json.dumps(docker_node_ls_to_array(output))
     return Response(response=resp, mimetype="application/json")
+
+@app.route('/containers', methods=['POST'])
+#Endpoint to create a new container
+def create_container():
+    """
+
+    """
+    if not request.json or not 'image' in request.json:
+        resp = json.dumps("Bad request")
+        return Response(response=resp, mimetype="application/json")
+
+    output = docker('create', request.json['image'])
+    resp = json.dumps(output)
+    return Response(response=resp, mimetype="application/json")
+
+@app.route('/containers/<id>', methods=['PATCH'])
+#Endpoint to change a container's state
+def change_state_container(id=None):
+    """
+
+    """
+    if not request.json or not 'state' in request.json:
+        resp = json.dumps("Bad request")
+        return Response(response=resp, mimetype="application/json")
+
+    state = request.json['state']
+    if state == 'run':
+        output = docker('container', 'start', id)
+
+    if state == 'pause':
+        output = docker('container', 'pause', id)
+
+    if state == 'stop':
+        output = docker('container', 'stop', id)
+
+    resp = json.dumps(output)
+    return Response(response=resp, mimetype="application/json")
+
+@app.route('/containers/<id>', methods=['DELETE'])
+#Endpoint to delete a specific container
+def delete_container(id=None):
+    """
+    
+    """
+    output = docker('container', 'rm', '-f', id)
+    resp = json.dumps(output)
+    return Response(response=resp, mimetype="application/json")
+
+@app.route('/containers', methods=['DELETE'])
+#Endpoint to delete all the containers
+def delete_all_containers():
+    """
+    
+    """
+    ids = docker_ps_to_array(docker('ps', '-a'))
+    for aux in ids:
+        docker('stop', aux['id'])
+        docker('rm', aux['id'])
+    resp= json.dumps("All containers deleted!")
+    return Response(response=resp, mimetype="application/json")
+
+@app.route('/images', methods=['GET'])
+#Endpoint to list all images
+def list_images():
+    """
+
+    """
+    output = docker('images', '-a')
+    resp = json.dumps(docker_images_to_array(output))
+    return Response(response=resp, mimetype="application/json")
+
+@app.route('/images', methods=['POST'])
+#Endpoint to create a new image
+def build_image():
+    """
+
+    """
+    if not request.json or not 'path' in request.json:
+        resp = json.dumps("Bad request")
+        return Response(response=resp, mimetype="application/json")
+
+    if 'tag' in request.json:
+        output = docker('image', 'build', '-t', request.json['tag'], request.json['path'])
+    else:
+        output = docker('image', 'build', request.json['path'])
+    resp = json.dumps(output)
+    return Response(response=resp, mimetype="application/json")
+
+@app.route('/images/<id>', methods=['PATCH'])
+#Endpoint to change a specific image's attributes
+def edit_image(id=None):
+    """
+    
+    """
+    if not request.json or not 'tag' in request.json:
+        resp = json.dumps("Bad request")
+    else:
+        output = docker('tag', id, request.json['tag'])
+        docker('rmi', id)
+        resp = json.dumps(output)
+    return Response(response=resp, mimetype="application/json")
+
+@app.route('/images/<id>', methods=['DELETE'])
+#Endpoint to delete a specific image
+def delete_image(id=None):
+    """
+
+    """
+    output = docker('image', 'rm', '-f', id)
+    resp = json.dumps(output)
+    return Response(response=resp, mimetype="application/json")
+
+@app.route('/images', methods=['DELETE'])
+#Endpoint to delete all images
+def delete_images():
+    """
+    
+    """
+    ids = docker_images_to_array(docker('images', '-a'))
+    for aux in ids:
+        docker('rmi', '-f', aux['id'])
+    resp= json.dumps("All images removed!")
+    return Response(response=resp, mimetype="application/json")
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')
