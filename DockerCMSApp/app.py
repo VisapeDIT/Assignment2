@@ -52,10 +52,10 @@ def docker_ps_to_array(output):
     all = []
     for c in [line.split() for line in output.splitlines()[1:]]:
         each = {}
-        each['id'] = c[0]
-        each['image'] = c[1]
-        each['name'] = c[-1]
-        each['ports'] = c[-2]
+        each['id'] = c[0].decode('utf-8')
+        each['image'] = c[1].decode('utf-8')
+        each['name'] = c[-1].decode('utf-8')
+        each['ports'] = c[-2].decode('utf-8')
         all.append(each)
     return all
 
@@ -66,12 +66,12 @@ def docker_service_ls_to_array(output):
     all = []
     for c in [line.split() for line in output.splitlines()[1:]]:
         each = {}
-        each['id'] = c[0]
-        each['name'] = c[1]
-        each['mode'] = c[2]
-        each['replicas'] = c[3]
-        each['image'] = c[4]
-        each['ports'] = c[5]
+        each['id'] = c[0].decode('utf-8')
+        each['name'] = c[1].decode('utf-8')
+        each['mode'] = c[2].decode('utf-8')
+        each['replicas'] = c[3].decode('utf-8')
+        each['image'] = c[4].decode('utf-8')
+        each['ports'] = c[5].decode('utf-8')
         all.append(each)
     return all
 
@@ -108,9 +108,9 @@ def docker_images_to_array(output):
     all = []
     for c in [line.split() for line in output.splitlines()[1:]]:
         each = {}
-        each['id'] = c[2]
-        each['tag'] = c[1]
-        each['name'] = c[0]
+        each['id'] = c[2].decode('utf-8')
+        each['tag'] = c[1].decode('utf-8')
+        each['name'] = c[0].decode('utf-8')
         all.append(each)
     return all
 
@@ -183,7 +183,7 @@ def create_container():
         return Response(response=resp, mimetype="application/json")
 
     output = docker('create', request.json['image'])
-    resp = json.dumps(output)
+    resp = json.dumps(output.decode('utf-8'))
     return Response(response=resp, mimetype="application/json")
 
 @app.route('/containers/<id>', methods=['PATCH'])
@@ -206,7 +206,7 @@ def change_state_container(id=None):
     if state == 'stop':
         output = docker('container', 'stop', id)
 
-    resp = json.dumps(output)
+    resp = json.dumps(output.decode('utf-8'))
     return Response(response=resp, mimetype="application/json")
 
 @app.route('/containers/<id>', methods=['DELETE'])
@@ -216,7 +216,7 @@ def delete_container(id=None):
     
     """
     output = docker('container', 'rm', '-f', id)
-    resp = json.dumps(output)
+    resp = json.dumps(output.decode('utf-8'))
     return Response(response=resp, mimetype="application/json")
 
 @app.route('/containers', methods=['DELETE'])
@@ -256,7 +256,7 @@ def build_image():
         output = docker('image', 'build', '-t', request.json['tag'], request.json['path'])
     else:
         output = docker('image', 'build', request.json['path'])
-    resp = json.dumps(output)
+    resp = json.dumps(output.decode('utf-8'))
     return Response(response=resp, mimetype="application/json")
 
 @app.route('/images/<id>', methods=['PATCH'])
@@ -270,7 +270,7 @@ def edit_image(id=None):
     else:
         output = docker('tag', id, request.json['tag'])
         docker('rmi', id)
-        resp = json.dumps(output)
+        resp = json.dumps(output.decode('utf-8'))
     return Response(response=resp, mimetype="application/json")
 
 @app.route('/images/<id>', methods=['DELETE'])
@@ -280,7 +280,7 @@ def delete_image(id=None):
 
     """
     output = docker('image', 'rm', '-f', id)
-    resp = json.dumps(output)
+    resp = json.dumps(output.decode('utf-8'))
     return Response(response=resp, mimetype="application/json")
 
 @app.route('/images', methods=['DELETE'])
