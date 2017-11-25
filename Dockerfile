@@ -10,6 +10,11 @@ MAINTAINER Visape Victor
 RUN apt-get update
 # Install Python and Basic Python Tools
 RUN apt-get install -y python3 python3-pip mysql-client libmysqlclient-dev
+# Install curl
+RUN apt-get install -y curl
+#Install docker
+RUN curl -fsSL get.docker.com|sh
+
 #copy app.py into /app folder 
 ADD /DockerCMSApp /DockerCMSApp
 
