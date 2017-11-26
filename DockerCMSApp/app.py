@@ -7,7 +7,6 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    print('hey')
     return """
     Available API endpoints:
 
