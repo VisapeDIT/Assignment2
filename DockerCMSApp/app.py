@@ -96,7 +96,7 @@ def docker_logs_to_object(id, output):
     logs['id'] = id
     all = []
     for line in output.splitlines():
-        all.append(line)
+        all.append(line.decode('utf-8'))
     logs['logs'] = all
     return logs
 
