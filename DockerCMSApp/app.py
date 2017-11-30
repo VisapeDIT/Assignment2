@@ -135,7 +135,9 @@ def conainers_index():
 # Endpoint to inspect a specific container
 def container_specific(id=None):
     """
-
+    Inspect specific container
+    curl -s -X GET -H 'Accept: application/json'
+    http://localhost:8080/containers/<id> | python -mjson.tool
     """
     output = docker('container', 'inspect', id)
     resp = json.dumps(output.decode('utf-8'))
@@ -145,7 +147,9 @@ def container_specific(id=None):
 # Endpoint to dump specific container logs
 def container_logs(id=None):
     """
-
+    Dump specific container logs
+    curl -s -X GET -H 'Accept: application/json'
+    http://localhost:8080/containers/<id>/logs | python -mjson.tool
     """
     output = docker('container', 'logs', id)
     resp = json.dumps(docker_logs_to_object(id,output))
@@ -155,7 +159,9 @@ def container_logs(id=None):
 #Endpoint to list all services
 def services_index():
     """
-
+    List all service
+    curl -s -X GET -H 'Accept: application/json'
+    http://localhost:8080/services | python -mjson.tool
     """
     output = docker('service', 'ls')
     resp = json.dumps(docker_service_ls_to_array(output))
@@ -165,7 +171,9 @@ def services_index():
 #Endpoint to list all nodes in the swarm
 def nodes_index():
     """
-
+    List all nodes in the swarm
+    curl -s -X GET -H 'Accept: application/json'
+    http://localhost:8080/nodes | python -mjson.tool
     """
     output = docker('node','ls')
     resp = json.dumps(docker_node_ls_to_array(output))
@@ -175,13 +183,21 @@ def nodes_index():
 #Endpoint to create a new container
 def create_container():
     """
+    Create a container
 
+    curl -X POST -H 'Content-Type: application/json'
+    http://localhost:8080/containers -d '{"image": "baselm/lab5-image"}'
+    curl -X POST -H 'Content-Type: application/json'
+    http://localhost:8080/containers -d '{"image": "baselm/lab5-image", "publish": "80:5000"}'
+            
     """
     if not request.json or not 'image' in request.json:
         resp = json.dumps("Bad request")
         return Response(response=resp, mimetype="application/json")
-
-    output = docker('create', request.json['image'])
+    if 'publish' in request.json:
+        output = docker('create', '-p', request.json['publish'], request.json['image'])
+    else:
+        output = docker('create', request.json['image'])
     resp = json.dumps(output.decode('utf-8'))
     return Response(response=resp, mimetype="application/json")
 
@@ -189,6 +205,11 @@ def create_container():
 #Endpoint to change a container's state
 def change_state_container(id=None):
     """
+    Update a container: (Run|pause|stop)
+    curl -X PATCH -H 'Content-Type: application/json'
+    http://localhost:8080/containers/b6cd8ea512c8 -d '{"state": "run"}'
+    curl -X PATCH -H 'Content-Type: application/json'
+    http://localhost:8080/containers/b6cd8ea512c8 -d '{"state": "stop"}'
 
     """
     if not request.json or not 'state' in request.json:
@@ -212,7 +233,10 @@ def change_state_container(id=None):
 #Endpoint to delete a specific container
 def delete_container(id=None):
     """
-    
+    Delete a specific container:
+
+    curl -s -X DELETE -H 'Accept: application/json'
+    http://localhost:8080/containers/<id> | python -mjson.tool
     """
     output = docker('container', 'rm', '-f', id)
     resp = json.dumps(output.decode('utf-8'))
@@ -222,7 +246,9 @@ def delete_container(id=None):
 #Endpoint to delete all the containers
 def delete_all_containers():
     """
-    
+    Delete all containers:
+    curl -s -X DELETE -H 'Accept: application/json'
+    http://localhost:8080/containers/ | python -mjson.tool
     """
     ids = docker_ps_to_array(docker('ps', '-a'))
     for aux in ids:
@@ -235,7 +261,9 @@ def delete_all_containers():
 #Endpoint to list all images
 def list_images():
     """
-
+    List all iamges:
+    curl -s -X GET -H 'Accept: application/json'
+    http://localhost:8080/images | python -mjson.tool
     """
     output = docker('images', '-a')
     resp = json.dumps(docker_images_to_array(output))
@@ -245,14 +273,16 @@ def list_images():
 #Endpoint to create a new image
 def build_image():
     """
-
+    Create image:
+    curl -X POST -H 'Content-Type: application/json'
+    http://localhost:8080/images -d {"path": "https://github.com/baselm/lab5-init-repo"}'
     """
     if not request.json or not 'path' in request.json:
         resp = json.dumps("Bad request")
         return Response(response=resp, mimetype="application/json")
 
     if 'tag' in request.json:
-        output = docker('image', 'build', '-t', request.json['tag'], request.json['path'])
+        output = docker('image', 'build', '-t', request.json['tag'],'-f', './Dockerfile', request.json['path'])
     else:
         output = docker('image', 'build', request.json['path'])
     resp = json.dumps(output.decode('utf-8'))
@@ -262,7 +292,10 @@ def build_image():
 #Endpoint to change a specific image's attributes
 def edit_image(id=None):
     """
-    
+    Update image attributes:
+     curl -s -X PATCH -H 'Content-Type: application/json'
+     http://localhost:8080/images/<id> -d '{"tag": "tag1"}'
+     
     """
     if not request.json or not 'tag' in request.json:
         resp = json.dumps("Bad request")
@@ -276,7 +309,9 @@ def edit_image(id=None):
 #Endpoint to delete a specific image
 def delete_image(id=None):
     """
-
+    Delete a specfic image:
+     curl -s -X DELETE -H 'Accept: application/json'
+     http://localhost:8080/images/<id> | python -mjson.tool
     """
     output = docker('image', 'rm', '-f', id)
     resp = json.dumps(output.decode('utf-8'))
@@ -286,7 +321,9 @@ def delete_image(id=None):
 #Endpoint to delete all images
 def delete_images():
     """
-    
+    Delete all images:
+    curl -s -X DELETE -H 'Accept: application/json'
+    http://localhost:8080/images/ | python -mjson.tool
     """
     ids = docker_images_to_array(docker('images', '-a'))
     for aux in ids:
