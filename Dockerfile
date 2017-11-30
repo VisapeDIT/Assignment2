@@ -12,16 +12,11 @@ RUN apt-get update
 RUN apt-get install -y python3 python3-pip
 # Install curl
 RUN apt-get install -y curl
-#Install sudo
-RUN apt-get -y install sudo
-
 #Install docker
 RUN curl -fsSL get.docker.com|sh
 #copy app.py into /app folder 
 ADD /DockerCMSApp /DockerCMSApp
 
-# Copy the application folder inside the container
-#COPY /templates /app/
 # Upgrade  PIP
 RUN pip3 install --upgrade pip
 # Get pip to download and install requirements:
@@ -32,6 +27,4 @@ EXPOSE 5000
 # Set the default directory where CMD will execute
 WORKDIR /DockerCMSApp
 # Set the default command to execute
-# when creating a new container
-# i.e. using Flask to serve the application
 CMD python3 app.py
