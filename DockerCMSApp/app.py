@@ -107,9 +107,9 @@ def docker_images_to_array(output):
     all = []
     for c in [line.split() for line in output.splitlines()[1:]]:
         each = {}
-        each['id'] = c[2].decode('utf-8')
-        each['tag'] = c[1].decode('utf-8')
         each['name'] = c[0].decode('utf-8')
+        each['tag'] = c[1].decode('utf-8')
+        each['id'] = c[2].decode('utf-8')
         all.append(each)
     return all
 
@@ -265,7 +265,7 @@ def list_images():
     curl -s -X GET -H 'Accept: application/json'
     http://localhost:8080/images | python -mjson.tool
     """
-    output = docker('images', '-a')
+    output = docker('image', 'ls')
     resp = json.dumps(docker_images_to_array(output))
     return Response(response=resp, mimetype="application/json")
 
@@ -282,7 +282,7 @@ def build_image():
         return Response(response=resp, mimetype="application/json")
 
     if 'tag' in request.json:
-        output = docker('image', 'build', '-t', request.json['tag'],'-f', './Dockerfile', request.json['path'])
+        output = docker('image', 'build', '-t', request.json['tag'], request.json['path'])
     else:
         output = docker('image', 'build', request.json['path'])
     resp = json.dumps(output.decode('utf-8'))

@@ -12,6 +12,10 @@ RUN apt-get update
 RUN apt-get install -y python3 python3-pip
 # Install curl
 RUN apt-get install -y curl
+# install sudo
+RUN apt-get install -y sudo
+# intall git
+RUN apt-get install -y git
 #Install docker
 RUN curl -fsSL get.docker.com|sh
 #copy app.py into /app folder 
